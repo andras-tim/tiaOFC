@@ -1,0 +1,79 @@
+#!/bin/bash
+#Created by: Andras Tim (tia) @ 2011
+
+set -e
+
+function getEof()
+{
+    out="`grep -abum 1 -A 1 '\#\#\#\#\#\# PAYLOAD \#\#\#\#\#\#' "$0"  | cut -d'-' -f 1`"
+    if [ `echo "$out" | wc -l` -eq 2 ]
+    then
+        # Not empty the data space
+        echo "$out" | tail -n 1
+    else
+        # Empty data space
+        wc -c "$0" | cut -d' ' -f 1
+    fi
+}
+
+function exitError()
+{
+    echo -e "$1"
+    [ $# -ge 2 ] && exit $2
+    exit 1
+}
+
+function help()
+{
+cat - << EOF
+`basename $0` help
+EOF
+}
+
+function doImport()
+{
+    # Create clean FSX
+    head -n $eof "$0" > "$0.tmp" || exitError 'ERROR: Create clean tia-ofc file'
+    chmod +x "$0.tmp"
+    # Add compressed content
+    tar -cz "$@" >> "$0.tmp" || exitError 'ERROR: Add content'
+    # Replace original file
+    mv "$0.tmp" "$0" || exitError 'ERROR: Update myself'
+}
+
+function doExport()
+{
+    dd if="$0" of=/dev/stdout bs=1 skip=$eof 2>/dev/null | tar -xz "$@" || exitError 'ERROR: Exporting content'
+}
+
+
+######
+# INIT
+#
+# Check self
+eof=$(getEof) || exitError "Bad tia-ofc file"
+[ $eof -lt 1 ] && exitError "Bad tia-ofc file"
+
+# Check command line args
+if [ $# -lt 1 ]
+then
+    exitError "Missing required arguments. Please read the --help"
+fi
+
+# Run command
+case "$1" in
+    --help)        help
+                   exit 0
+                   ;;
+    -i|--import)   shift
+                   doImport "$@"
+                   exit $?
+                   ;;
+    -e|--export)   shift
+                   doExport "$@"
+                   exit $?
+                   ;;
+esac
+exitError "Bad parameters. Please read the --help"
+
+###### PAYLOAD ######
