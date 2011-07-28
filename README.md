@@ -1,2 +1,4 @@
-# tiaSFX
-Customizable self-extracting archive in bash for unix console-loving users
+# tiaOFC
+tiaOneFileConfigurator for create compact configuration tools
+
+Read https://github.com/andras-tim/tiaOFC/wiki for details
